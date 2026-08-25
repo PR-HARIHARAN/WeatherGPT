@@ -5,7 +5,7 @@ Run it with:
     uv run uvicorn gateway.main:app --reload --port 8000
 
 Env vars of note (see .env.example):
-    LLM_MODELS               default "ollama:qwen2.5:7b" (local, no key needed)
+    LLM_MODELS               default "groq:openai/gpt-oss-120b"
     WEATHER_BACKEND_URL      default "http://localhost:8000/backend" (this
                               process, via the mounted weather_backend app)
     IMD_API_KEY               optional, enables the IMD tier in weather_backend
@@ -33,7 +33,11 @@ _AGENTS_PATH = os.path.join(os.path.dirname(__file__), "..", "agents")
 if _AGENTS_PATH not in sys.path:
     sys.path.insert(0, _AGENTS_PATH)
 
-os.environ.setdefault("LLM_MODELS", "ollama:qwen2.5:7b")
+from dotenv import load_dotenv
+
+load_dotenv()
+
+os.environ.setdefault("LLM_MODELS", "groq:openai/gpt-oss-120b")
 os.environ.setdefault("WEATHER_BACKEND_URL", "http://127.0.0.1:8000/backend")
 
 from src.alerts.database import init_db as init_alerts_db  # noqa: E402

@@ -47,7 +47,6 @@ dependencies = [
     # Agent layer (LangGraph/LangChain) and its model providers
     "langchain>=0.3.27",
     "langgraph>=0.6.7",
-    "langchain-ollama>=0.3.10",
     "langchain-groq>=0.3.8",
     "langchain-google-genai>=2.1.12",
 

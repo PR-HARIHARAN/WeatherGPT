@@ -66,7 +66,7 @@ def _backend_env() -> dict:
     existing = env.get("PYTHONPATH", "")
     parts = [str(SRC), str(AGENTS_SRC)] + ([existing] if existing else [])
     env["PYTHONPATH"] = os.pathsep.join(parts)
-    env.setdefault("LLM_MODELS", "ollama:qwen2.5:7b")
+    env.setdefault("LLM_MODELS", "groq:openai/gpt-oss-120b")
     return env
 
 

@@ -48,8 +48,7 @@ def _env_bool(key: str, default: bool) -> bool:
     return raw.lower() in {"1", "true", "yes", "on"}
 
 
-# Providers that need an API key, and the variable it lives in. Anything not
-# listed (ollama, for instance) needs no credential.
+# Providers that need an API key, and the variable it lives in.
 PROVIDER_KEY_ENV: dict[str, str] = {
     "groq": "GROQ_API_KEY",
     "google_genai": "GOOGLE_API_KEY",
@@ -67,8 +66,8 @@ class LLMSettings:
     agent talks to, the rest are what it fails over to. Adding Cerebras or
     switching to a local model is an env change with no code edit.
 
-        LLM_MODELS=ollama:qwen2.5:7b                        # local dev
-        LLM_MODELS=groq:llama-3.3-70b-versatile,google_genai:gemini-2.0-flash
+        LLM_MODELS=groq:openai/gpt-oss-120b                # default
+        LLM_MODELS=groq:openai/gpt-oss-120b,google_genai:gemini-2.0-flash
 
     Entries whose API key is missing are dropped, so the same value can be
     committed for the whole team and each machine uses what it has.
@@ -78,7 +77,7 @@ class LLMSettings:
         default_factory=lambda: tuple(
             spec.strip()
             for spec in (
-                _env("LLM_MODELS", "groq:llama-3.3-70b-versatile,google_genai:gemini-2.0-flash")
+                _env("LLM_MODELS", "groq:openai/gpt-oss-120b,google_genai:gemini-2.0-flash")
                 or ""
             ).split(",")
             if spec.strip()
