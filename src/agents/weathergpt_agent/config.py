@@ -48,7 +48,9 @@ def _env_bool(key: str, default: bool) -> bool:
     return raw.lower() in {"1", "true", "yes", "on"}
 
 
-# Providers that need an API key, and the variable it lives in.
+# Providers that need an API key, and the variable it lives in. A provider not
+# listed here (e.g. "ollama", which runs locally with no key) is always
+# considered usable.
 PROVIDER_KEY_ENV: dict[str, str] = {
     "groq": "GROQ_API_KEY",
     "google_genai": "GOOGLE_API_KEY",
@@ -56,6 +58,23 @@ PROVIDER_KEY_ENV: dict[str, str] = {
     "anthropic": "ANTHROPIC_API_KEY",
     "cerebras": "CEREBRAS_API_KEY",
 }
+
+
+def _models_from_env() -> str:
+    """Build the "provider:model" spec list from env.
+
+    LLM_PROVIDER + LLM_MODEL is the simple path: set both and the agent talks
+    to that one model, e.g. LLM_PROVIDER=ollama, LLM_MODEL=llama3.1 for a local
+    model, or LLM_PROVIDER=groq, LLM_MODEL=openai/gpt-oss-120b for Groq.
+
+    LLM_MODELS (plural) stays as the advanced escape hatch for a multi-model
+    fallback chain and wins only if LLM_PROVIDER/LLM_MODEL are not both set.
+    """
+    provider = _env("LLM_PROVIDER")
+    model = _env("LLM_MODEL")
+    if provider and model:
+        return f"{provider}:{model}"
+    return _env("LLM_MODELS", "groq:openai/gpt-oss-120b") or ""
 
 
 @dataclass(frozen=True)
@@ -75,14 +94,13 @@ class LLMSettings:
 
     models: tuple[str, ...] = field(
         default_factory=lambda: tuple(
-            spec.strip()
-            for spec in (
-                _env("LLM_MODELS", "groq:openai/gpt-oss-120b,google_genai:gemini-2.0-flash")
-                or ""
-            ).split(",")
-            if spec.strip()
+            spec.strip() for spec in _models_from_env().split(",") if spec.strip()
         )
     )
+
+    # Base URL for a local Ollama server. Only read when "ollama" appears in
+    # the provider chain; init_chat_model forwards it to ChatOllama.
+    ollama_base_url: str | None = field(default_factory=lambda: _env("OLLAMA_BASE_URL"))
 
     temperature: float = field(default_factory=lambda: _env_float("LLM_TEMPERATURE", 0.2))
     max_tokens: int = field(default_factory=lambda: _env_int("LLM_MAX_TOKENS", 700))

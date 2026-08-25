@@ -102,6 +102,8 @@ def _provider_chain() -> tuple[BaseChatModel, ...]:
         }
         kwargs["max_tokens"] = settings.max_tokens
         kwargs["max_retries"] = settings.max_retries
+        if provider == "ollama" and settings.ollama_base_url:
+            kwargs["base_url"] = settings.ollama_base_url
         if provider == "groq" and settings.groq_requests_per_second > 0:
             # Groq's free tier is ~30 req/min and a judging queue will hit it.
             kwargs["rate_limiter"] = InMemoryRateLimiter(

@@ -49,6 +49,7 @@ dependencies = [
     "langgraph>=0.6.7",
     "langchain-groq>=0.3.8",
     "langchain-google-genai>=2.1.12",
+    "langchain-ollama>=0.3.0",
 
     # Testing
     "pytest>=8.0",

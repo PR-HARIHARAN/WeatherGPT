@@ -13,11 +13,11 @@ export async function checkBackendHealth() {
 }
 
 // Matches gateway POST /api/chat -> {headline, summary, session_id, language, tools_used, degraded}
-export async function sendChatMessage({ message, language = 'auto', crop = 'other', sessionId }) {
+export async function sendChatMessage({ message, language = 'auto', crop = 'other', sessionId, latitude, longitude }) {
   const response = await fetch(`${API_BASE_URL}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, language, crop, session_id: sessionId }),
+    body: JSON.stringify({ message, language, crop, session_id: sessionId, latitude, longitude }),
   });
   if (!response.ok) throw new Error(`Chat request failed (${response.status})`);
   return await response.json();
@@ -26,7 +26,7 @@ export async function sendChatMessage({ message, language = 'auto', crop = 'othe
 // Matches gateway POST /api/chat/stream (Server-Sent Events). Calls `onEvent`
 // once per event: {type:'tool_start'|'tool_end'|'token'|'final'|'error', ...}.
 // Returns a function that aborts the stream early (e.g. on unmount).
-export function streamChatMessage({ message, language = 'auto', crop = 'other', sessionId }, onEvent) {
+export function streamChatMessage({ message, language = 'auto', crop = 'other', sessionId, latitude, longitude }, onEvent) {
   const controller = new AbortController();
 
   (async () => {
@@ -35,7 +35,7 @@ export function streamChatMessage({ message, language = 'auto', crop = 'other', 
       response = await fetch(`${API_BASE_URL}/api/chat/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, language, crop, session_id: sessionId }),
+        body: JSON.stringify({ message, language, crop, session_id: sessionId, latitude, longitude }),
         signal: controller.signal,
       });
     } catch (err) {
@@ -82,12 +82,14 @@ export function streamChatMessage({ message, language = 'auto', crop = 'other', 
 }
 
 // Matches gateway POST /api/chat/voice (multipart: file, language, crop, session_id)
-export async function sendVoiceAudio({ audioBlob, language = 'auto', crop = 'other', sessionId }) {
+export async function sendVoiceAudio({ audioBlob, language = 'auto', crop = 'other', sessionId, latitude, longitude }) {
   const formData = new FormData();
   formData.append('file', audioBlob, 'voice.webm');
   formData.append('language', language);
   formData.append('crop', crop);
   if (sessionId) formData.append('session_id', sessionId);
+  if (latitude != null) formData.append('latitude', latitude);
+  if (longitude != null) formData.append('longitude', longitude);
 
   const response = await fetch(`${API_BASE_URL}/api/chat/voice`, {
     method: 'POST',
