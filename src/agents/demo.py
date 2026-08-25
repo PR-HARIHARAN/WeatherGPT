@@ -7,7 +7,7 @@ section calls into the package and prints what came back.
     uv run --extra backend uvicorn weather_backend.main:app --port 8000
 
     # terminal 2
-    $env:LLM_MODELS="ollama:qwen2.5:7b"
+    $env:LLM_MODELS="groq:openai/gpt-oss-120b"
     $env:WEATHER_BACKEND_URL="http://127.0.0.1:8000"
     uv run python scripts/demo.py
 """

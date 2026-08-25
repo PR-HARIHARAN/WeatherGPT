@@ -100,12 +100,8 @@ def _provider_chain() -> tuple[BaseChatModel, ...]:
             "temperature": settings.temperature,
             "timeout": settings.request_timeout,
         }
-        if provider == "ollama":
-            # Ollama's output cap is num_predict; max_tokens is silently ignored.
-            kwargs["num_predict"] = settings.max_tokens
-        else:
-            kwargs["max_tokens"] = settings.max_tokens
-            kwargs["max_retries"] = settings.max_retries
+        kwargs["max_tokens"] = settings.max_tokens
+        kwargs["max_retries"] = settings.max_retries
         if provider == "groq" and settings.groq_requests_per_second > 0:
             # Groq's free tier is ~30 req/min and a judging queue will hit it.
             kwargs["rate_limiter"] = InMemoryRateLimiter(
@@ -120,8 +116,8 @@ def _provider_chain() -> tuple[BaseChatModel, ...]:
 
     if not chain:
         raise NoLLMConfigured(
-            "No usable model. Set LLM_MODELS and the matching API key, or run a "
-            "local one: LLM_MODELS=ollama:qwen2.5:7b"
+            "No usable model. Set LLM_MODELS and the matching API key, e.g. "
+            "LLM_MODELS=groq:openai/gpt-oss-120b with GROQ_API_KEY set."
         )
     return tuple(chain)
 
