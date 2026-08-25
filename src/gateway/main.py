@@ -148,6 +148,8 @@ class ChatRequest(BaseModel):
     language: str = "auto"
     crop: str = "other"
     session_id: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
 
 
 def _resolve_reply_language(requested: str, detected: str) -> str:
@@ -176,6 +178,8 @@ async def chat(body: ChatRequest) -> dict[str, Any]:
         session_id=body.session_id,
         language=reply_language,
         persona=_persona_for_crop(body.crop),
+        latitude=body.latitude,
+        longitude=body.longitude,
     )
     answer_en = message_text(reply)
     answer = translator.process_llm_response(answer_en, reply_language)
@@ -227,6 +231,8 @@ async def chat_stream(body: ChatRequest):
                 session_id=body.session_id,
                 language=reply_language,
                 persona=persona,
+                latitude=body.latitude,
+                longitude=body.longitude,
             ):
                 etype = event["type"]
 
@@ -277,6 +283,8 @@ async def chat_voice(
     language: str = "auto",
     crop: str = "other",
     session_id: str | None = None,
+    latitude: float | None = None,
+    longitude: float | None = None,
 ) -> dict[str, Any]:
     """Voice chat: speech-to-text, run the same pipeline as /api/chat, then TTS the reply."""
     audio_bytes = await file.read()
@@ -287,7 +295,14 @@ async def chat_voice(
     transcript = voice.speech_to_text(audio_bytes, language=stt_language)
 
     chat_result = await chat(
-        ChatRequest(message=transcript, language=language, crop=crop, session_id=session_id)
+        ChatRequest(
+            message=transcript,
+            language=language,
+            crop=crop,
+            session_id=session_id,
+            latitude=latitude,
+            longitude=longitude,
+        )
     )
     chat_result["userTranscript"] = transcript
     return chat_result

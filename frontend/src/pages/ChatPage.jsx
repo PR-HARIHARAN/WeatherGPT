@@ -23,6 +23,24 @@ function timeNow() {
   return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
+// Asks the browser once per page load and caches the result for every chat
+// request after that. Never blocks sending a message: on denial, timeout, or
+// an unsupported browser it resolves to nulls and the agent falls back to
+// asking the user for a place name instead.
+function getBrowserLocation() {
+  return new Promise((resolve) => {
+    if (!('geolocation' in navigator)) {
+      resolve({ latitude: null, longitude: null });
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+      () => resolve({ latitude: null, longitude: null }),
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }
+    );
+  });
+}
+
 export default function ChatPage({ language, onLastDistrict }) {
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState([
@@ -31,6 +49,13 @@ export default function ChatPage({ language, onLastDistrict }) {
   const sessionIdRef = useRef(null);
   const abortStreamRef = useRef(null);
   const audioElRef = useRef(null);
+  const locationRef = useRef({ latitude: null, longitude: null });
+
+  useEffect(() => {
+    getBrowserLocation().then((loc) => {
+      locationRef.current = loc;
+    });
+  }, []);
 
   useEffect(() => () => abortStreamRef.current?.(), []);
 
@@ -90,7 +115,13 @@ export default function ChatPage({ language, onLastDistrict }) {
     };
 
     abortStreamRef.current = streamChatMessage(
-      { message: queryText, language, sessionId: sessionIdRef.current },
+      {
+        message: queryText,
+        language,
+        sessionId: sessionIdRef.current,
+        latitude: locationRef.current.latitude,
+        longitude: locationRef.current.longitude,
+      },
       (event) => {
         if (event.type === 'tool_start') {
           patchLastAgentMessage((msg) => ({
@@ -134,7 +165,13 @@ export default function ChatPage({ language, onLastDistrict }) {
     if (!audioBlob) return;
     setIsLoading(true);
     try {
-      const result = await sendVoiceAudio({ audioBlob, language, sessionId: sessionIdRef.current });
+      const result = await sendVoiceAudio({
+        audioBlob,
+        language,
+        sessionId: sessionIdRef.current,
+        latitude: locationRef.current.latitude,
+        longitude: locationRef.current.longitude,
+      });
       const replyLang = result.detected_language || result.language || 'en';
       setMessages((prev) => [
         ...prev,
